@@ -29,3 +29,18 @@ def get_task():
     tasks = cursor.fetchall()
     conn.close()
     return tasks
+
+def complete_task(task_id): #do kompletowania tasków
+    conn = sqlite3.connect("todo.db")
+    cursor = conn.cursor()
+    cursor.execute('UPDATE tasks SET status = 1 WHERE id = ?', (task_id,))
+    conn.commit()
+    conn.close()
+
+def delete_task(task_id):
+    conn = sqlite3.connect("todo.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tasks WHERE id =?", (task_id,))
+    conn.commit()
+    conn.close()
+    
