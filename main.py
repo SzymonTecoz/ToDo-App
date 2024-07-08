@@ -1,6 +1,7 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 import sqlite3
+import csv
 
 def init_db(): #inicjalizacja bazy danych
     conn = sqlite3.connect("todo.db")
@@ -44,6 +45,25 @@ def delete_task(task_id):
     conn.commit()
     conn.close()
 
+def save_tasks_to_file(file_path): #zapisywanie tasków do pliku
+    tasks = get_task()
+    with open(file_path, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["id", "task", "status"])
+        writer.writerows(tasks)
+
+def load_tasks_from_file(file_path):
+    with open(file_path, mode="r") as file:
+        reader = csv.reader(file)
+        next(reader)
+        tasks = [(row[1], int(row[2])) for row in reader]
+    conn = sqlite3.connect("todo.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tasks")
+    cursor.executemany("INSERT INTO tasks (task, status) VALUES (?, ?)", tasks)
+    conn.commit()
+    conn.close()
+
 class TodoApp:
     def __init__(self, root):
         self.root = root
@@ -58,6 +78,12 @@ class TodoApp:
 
         self.tasks_frame = tk.Frame(self.root)
         self.tasks_frame.pack(pady=10)
+
+        self.save_button = tk.Button(self.root, text= "Save tasks to file", command=self.save_tasks)
+        self.save_button.pack(pady=5)
+
+        self.load_button = tk.Button(self.root, text= "Load tasks from file", command= self.load_tasks_file)
+        self.load_button.pack(pady=5)
 
         self.load_tasks()
 
@@ -100,7 +126,22 @@ class TodoApp:
         delete_task(task_id)
         self.load_tasks()
 
-if __name__ == "main":
+    def save_tasks(self):
+        file_path = filedialog.asksaveasfilename(defaultextension = ".csv", filetypes = [("CSV files", "*.csv")])
+        if file_path:
+            load_tasks_from_file(file_path)
+            self.load_tasks()
+            messagebox.showinfo("Info", "Tasks loaded successfully")
+
+    def load_tasks_file(self):
+        file_path = filedialog.askopenfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
+        if file_path:
+            load_tasks_from_file(file_path)
+            self.load_tasks()
+            messagebox.showinfo("Info", "Tasks loaded successfully")
+
+
+if __name__ == "__main__":
     init_db()
     root = tk.Tk()
     app = TodoApp(root)
